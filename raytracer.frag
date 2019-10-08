@@ -190,6 +190,43 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
 
+    vec3 p0c = ray.p0 - c;
+
+    float eqnA = dot(ray.v, ray.v);
+    float eqnB = (2.0 * dot(p0c, ray.v));
+    float eqnC = dot(p0c, p0c) - (r * r);
+
+    float discrim = (eqnB * eqnB) - (4.0 * eqnA * eqnC);
+
+    if (discrim < 0.0) {
+        return INF;
+    } else {
+
+        float firstT = (-eqnB - sqrt(discrim)) / (2.0 * eqnA);
+
+        if (firstT > 0.0) {
+            intersect.p = ray.p0 + firstT*ray.v;
+            intersect.n = normalize(intersect.p - c);
+            return firstT;
+        } 
+        
+        if (discrim > 0.0) {
+            float secondT = (-eqnB + sqrt(discrim)) / (2.0 * eqnA);
+
+            if (secondT > 0.0) {
+                intersect.p = ray.p0 + secondT*ray.v;
+                intersect.n = normalize(intersect.p - c);
+                return secondT;
+            }
+
+        }
+
+    // Returns INF if not of the other cases were triggered
+    return INF;
+
+    }
+
+
 /** TODO: PUT YOUR CODE HERE **/
     // TODO: The below three are dummy values
     intersect.p = vec3(0, 0, 0);
@@ -360,11 +397,12 @@ vec3 getPhongColor(Intersection intersect, Material m) {
 */
 varying vec2 v_position;
 Ray getRay() {
+
     Ray ray;
     ray.p0 = eye;
 
     vec3 towards;
-    towards = cross(up, right);
+    towards = normalize(cross(up, right));
 
     if (orthographic == 1) {
         ray.p0 = eye + 10.0 * v_position.x * right + 10.0 * v_position.y * up;
@@ -372,7 +410,7 @@ Ray getRay() {
     }
     else {
         vec3 v;
-        v = towards + v_position.x * tan(fovx/2.0) * right + v_position.y * tan(fovy/2.0) * up;
+        v = towards + (v_position.x * tan(fovx/2.0) * right) + (v_position.y * tan(fovy/2.0) * up);
         v = normalize(v);
         ray.v = v;
     }
