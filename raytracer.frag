@@ -134,14 +134,12 @@ float rayIntersectTriangle(Ray ray, vec3 a, vec3 b, vec3 c,
     vec3 ab = b - a;
     vec3 ac = c - a;
 
-    vec3 normal = cross(ac, ab);
-
     vec3 pvec = cross(ray.v, ac);
 
     float determinant = dot(ab, pvec);
 
     if (abs(determinant) < EPS) {
-        t = INF;
+        return INF;
     }
 
     float inverseDeterminant = 1.0 / determinant;
@@ -149,26 +147,25 @@ float rayIntersectTriangle(Ray ray, vec3 a, vec3 b, vec3 c,
     float u = dot(tvec, pvec) * inverseDeterminant;
 
     if (u < 0.0 || u > 1.0) {
-        t = INF;
+        return INF;
     }
 
     vec3 qvec = cross(tvec, ab);
     float w = dot(ray.v, qvec) * inverseDeterminant;
 
-    if (w < 0.0 || u + w > 1.0) {
-        t = INF;
+    if (w < 0.0 || (u + w) > 1.0) {
+        return INF;
     }
 
     t = dot(ac, qvec) * inverseDeterminant;
 
     if (t < 0.0) {
-        t = INF;
+        return INF;
     }
 
-    vec3 p = ray.p0 + (ray.v * t);
+    vec3 p = ray.p0 + t*ray.v;
+    vec3 normal = normalize(cross(ab,ac));
 
-/** TODO: PUT YOUR CODE HERE **/
-    // TODO: The below three are dummy values
     intersect.p = p;
     intersect.n = normal;
     return t;
@@ -367,19 +364,16 @@ Ray getRay() {
     ray.p0 = eye;
 
     vec3 towards;
-    towards = cross(up,right);
+    towards = cross(up, right);
 
     if (orthographic == 1) {
-        ray.p0 += 10.0 * v_position.x * right + 10.0 * v_position.y * up;
+        ray.p0 = eye + 10.0 * v_position.x * right + 10.0 * v_position.y * up;
         ray.v = towards;
     }
     else {
-
         vec3 v;
-
         v = towards + v_position.x * tan(fovx/2.0) * right + v_position.y * tan(fovy/2.0) * up;
-        v =normalize(v);
-
+        v = normalize(v);
         ray.v = v;
     }
     return ray;
