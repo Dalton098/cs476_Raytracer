@@ -129,12 +129,49 @@ float rayIntersectTriangle(Ray ray, vec3 a, vec3 b, vec3 c,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
 
+    float t = INF;
+
+    vec3 ab = b - a;
+    vec3 ac = c - a;
+
+    vec3 normal = cross(ac, ab);
+
+    vec3 pvec = cross(ray.v, ac);
+
+    float determinant = dot(ab, pvec);
+
+    if (abs(determinant) < EPS) {
+        t = INF;
+    }
+
+    float inverseDeterminant = 1.0 / determinant;
+    vec3 tvec = ray.p0 - a;
+    float u = dot(tvec, pvec) * inverseDeterminant;
+
+    if (u < 0.0 || u > 1.0) {
+        t = INF;
+    }
+
+    vec3 qvec = cross(tvec, ab);
+    float w = dot(ray.v, qvec) * inverseDeterminant;
+
+    if (w < 0.0 || u + w > 1.0) {
+        t = INF;
+    }
+
+    t = dot(ac, qvec) * inverseDeterminant;
+
+    if (t < 0.0) {
+        t = INF;
+    }
+
+    vec3 p = ray.p0 + (ray.v * t);
 
 /** TODO: PUT YOUR CODE HERE **/
     // TODO: The below three are dummy values
-    intersect.p = vec3(0, 0, 0);
-    intersect.n = vec3(0, 0, 0);
-    return INF;
+    intersect.p = p;
+    intersect.n = normal;
+    return t;
 }
 
 
@@ -328,18 +365,22 @@ varying vec2 v_position;
 Ray getRay() {
     Ray ray;
     ray.p0 = eye;
-    // TODO: Finish constructing ray by figuring out direction, using
-    // v_position.x, v_position.y, fovx, fovy, up, and right
-    if (orthographic == 1) {
-        // TODO: Fill in code for constructing orthographic rays
-        // (You can ignore this if you aren't doing the orthographic extra task)
 
-/** TODO: PUT YOUR CODE HERE **/
+    vec3 towards;
+    towards = cross(up,right);
+
+    if (orthographic == 1) {
+        ray.p0 += 10.0 * v_position.x * right + 10.0 * v_position.y * up;
+        ray.v = towards;
     }
     else {
-        // TODO: Fill in ordinary perspective ray based on fovx and fovy (the default option)
 
-/** TODO: PUT YOUR CODE HERE **/
+        vec3 v;
+
+        v = towards + v_position.x * tan(fovx/2.0) * right + v_position.y * tan(fovy/2.0) * up;
+        v =normalize(v);
+
+        ray.v = v;
     }
     return ray;
 }
