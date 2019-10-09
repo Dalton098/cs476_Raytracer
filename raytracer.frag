@@ -1,8 +1,8 @@
 precision mediump float;
 
-#define INF 1.0e+12
-#define EPS 1.0e-3 // Reflect/shadow/transmission ray offset
-#define MAX_RECURSION 3 // Maximum depth for rays
+#define INF 1.e+12
+#define EPS 1.e-3// Reflect/shadow/transmission ray offset
+#define MAX_RECURSION 3// Maximum depth for rays
 #define MAX_LIGHTS 10
 #define MAX_MATERIALS 10
 #define M_PI 3.1415926535897932384626433832795
@@ -11,13 +11,13 @@ precision mediump float;
                 DATA TYPES
 ********************************************/
 struct Material {
-  vec3 kd;
-  vec3 ks;
-  vec3 ka;
-  vec3 kt;
-  float shininess;
-  float refraction;
-  int special;
+    vec3 kd;
+    vec3 ks;
+    vec3 ka;
+    vec3 kt;
+    float shininess;
+    float refraction;
+    int special;
 };
 
 struct Light {
@@ -29,15 +29,15 @@ struct Light {
 };
 
 struct Ray {
-  vec3 p0;
-  vec3 v;
+    vec3 p0;
+    vec3 v;
 };
 
 struct Intersection {
-  vec3 p; // Point of intersection
-  vec3 n; // Normal of intersection
-  int mIdx; // Index into materials array
-  float sCoeff; // Coefficient for checkerboard or special material
+    vec3 p; // Point of intersection
+    vec3 n; // Normal of intersection
+    int mIdx; // Index into materials array
+    float sCoeff; // Coefficient for checkerboard or special material
 };
 
 
@@ -125,47 +125,47 @@ float rayIntersectPlane(Ray ray, vec3 n, vec3 p, int mIdx, out Intersection inte
 * @returns {float} t : Parameter t so that point of intersection is ray.P0 + t*ray.V
 */
 float rayIntersectTriangle(Ray ray, vec3 a, vec3 b, vec3 c,
-                            int mIdx, mat4 MInv, mat3 N,
+    int mIdx, mat4 MInv, mat3 N,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
-
+    
     float t = INF;
-
+    
     vec3 ab = b - a;
     vec3 ac = c - a;
-
+    
     vec3 pvec = cross(ray.v, ac);
-
+    
     float determinant = dot(ab, pvec);
-
+    
     if (abs(determinant) < EPS) {
         return INF;
     }
-
+    
     float inverseDeterminant = 1.0 / determinant;
     vec3 tvec = ray.p0 - a;
     float u = dot(tvec, pvec) * inverseDeterminant;
-
+    
     if (u < 0.0 || u > 1.0) {
         return INF;
     }
-
+    
     vec3 qvec = cross(tvec, ab);
     float w = dot(ray.v, qvec) * inverseDeterminant;
-
+    
     if (w < 0.0 || (u + w) > 1.0) {
         return INF;
     }
-
+    
     t = dot(ac, qvec) * inverseDeterminant;
-
+    
     if (t < 0.0) {
         return INF;
     }
-
+    
     vec3 p = ray.p0 + t*ray.v;
     vec3 normal = normalize(cross(ab,ac));
-
+    
     intersect.p = p;
     intersect.n = normal;
     return t;
@@ -179,59 +179,55 @@ float rayIntersectTriangle(Ray ray, vec3 a, vec3 b, vec3 c,
 * @param {vec3} c : Center of the sphere
 * @param {float} r : Radius of the sphere
 * @param {int} mIdx : Array index of material that the sphere is made of
-* @param {mat4} MInv: Inverse of the transformation M that's applied to the sphere before ray intersection
+* @param {mat4} MInv: Inverse o
+    // Returns INF if none of the other cases were triggered
+    return INF;
+f the transformation M that's applied to the sphere before ray intersection
 * @param {mat3} N: The normal transformation associated to M
 * @param {Intersection (out)} intersect : The intersection
 *
 * @returns {float} t : Parameter t so that point of intersection is ray.P0 + t*ray.V
 */
 float rayIntersectSphere(Ray ray, vec3 c, float r,
-                            int mIdx, mat4 MInv, mat3 N,
+    int mIdx, mat4 MInv, mat3 N,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
-
+    
     vec3 p0c = ray.p0 - c;
-
+    
     float eqnA = dot(ray.v, ray.v);
     float eqnB = (2.0 * dot(p0c, ray.v));
     float eqnC = dot(p0c, p0c) - (r * r);
-
+    
     float discrim = (eqnB * eqnB) - (4.0 * eqnA * eqnC);
-
+    
     if (discrim < 0.0) {
         return INF;
     } else {
-
+        
         float firstT = (-eqnB - sqrt(discrim)) / (2.0 * eqnA);
-
+        
         if (firstT > 0.0) {
             intersect.p = ray.p0 + firstT*ray.v;
             intersect.n = normalize(intersect.p - c);
+            intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
             return firstT;
-        } 
+        }
         
         if (discrim > 0.0) {
             float secondT = (-eqnB + sqrt(discrim)) / (2.0 * eqnA);
-
+            
             if (secondT > 0.0) {
                 intersect.p = ray.p0 + secondT*ray.v;
                 intersect.n = normalize(intersect.p - c);
+                intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
                 return secondT;
             }
-
+            
         }
-
-    // Returns INF if not of the other cases were triggered
-    return INF;
-
     }
-
-
-/** TODO: PUT YOUR CODE HERE **/
-    // TODO: The below three are dummy values
-    intersect.p = vec3(0, 0, 0);
-    intersect.n = vec3(0, 0, 0);
-    intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
+    
+    // Returns INF if none of the other cases were triggered
     return INF;
 }
 
@@ -255,16 +251,88 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
 * @returns {float} t : Parameter t so that point of intersection is ray.P0 + t*ray.V
 */
 float rayIntersectBox(Ray ray, float W, float H, float L,
-                        vec3 c, int mIdx, mat4 MInv, mat3 N,
+    vec3 c, int mIdx, mat4 MInv, mat3 N,
                         out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
+    //   intersect.sCoeff = 1.0;
+    
+    float t;
 
-/** TODO: PUT YOUR CODE HERE **/
-    // TODO: The below three are dummy values
-    intersect.p = vec3(0, 0, 0);
-    intersect.n = vec3(0, 0, 0);
-    intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
-    return INF;
+    vec3 side1p = vec3(c.x - W/2.0, c.y, c.z);
+    vec3 side2p = vec3(c.x + W/2.0, c.y, c.z);
+    vec3 side3p = vec3(c.x, c.y - H/2.0, c.z);
+    vec3 side4p = vec3(c.x, c.y + H/2.0, c.z);
+    vec3 side5p = vec3(c.x, c.y, c.z - L/2.0);
+    vec3 side6p = vec3(c.x, c.y, c.z + L/2.0);
+
+    vec3 norm1 = vec3(0.0, 0.0, -1.0);
+    vec3 norm2 = vec3(0.0, 0.0, 1.0);
+    vec3 norm3 = vec3(0.0, -1.0, 0.0);
+    vec3 norm4 = vec3(0.0, 1.0, 0.0);
+    vec3 norm5 = vec3(-1.0, 0.0, 0.0);
+    vec3 norm6 = vec3(1.0, 0.0, 0.0); 
+
+    Intersection intersect1;
+    Intersection intersect2;
+    Intersection intersect3;
+    Intersection intersect4;
+    Intersection intersect5;
+    Intersection intersect6;
+
+    float t1 = rayIntersectPlane(ray, norm1, side1p, mIdx, intersect1);
+    float t2 = rayIntersectPlane(ray, norm2, side2p, mIdx, intersect2);
+    float t3 = rayIntersectPlane(ray, norm3, side3p, mIdx, intersect3);
+    float t4 = rayIntersectPlane(ray, norm4, side4p, mIdx, intersect4);
+    float t5 = rayIntersectPlane(ray, norm5, side5p, mIdx, intersect5);
+    float t6 = rayIntersectPlane(ray, norm6, side6p, mIdx, intersect6);
+
+    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+    if (tmax < 0.0) {
+        return INF;
+    }
+
+    if (tmin > tmax) { 
+        return INF;
+    }
+    
+    if (tmin == t1) {
+        intersect.p = intersect1.p;
+        intersect.n = intersect1.n;
+        return t1;
+    }
+
+    if (tmin == t2) {
+        intersect.p = intersect2.p;
+        intersect.n = intersect2.n;
+        return t2;
+    }
+
+    if (tmin == t3) {
+        intersect.p = intersect3.p;
+        intersect.n = intersect3.n;
+        return t3;
+    }
+
+    if (tmin == t4) {
+        intersect.p = intersect4.p;
+        intersect.n = intersect4.n;
+        return t4;
+    }
+
+    if (tmin == t5) {
+        intersect.p = intersect5.p;
+        intersect.n = intersect5.n;
+        return t5;
+    }
+
+    if (tmin == t6) {
+        intersect.p = intersect6.p;
+        intersect.n = intersect6.n;
+        return t6;
+    }
+
 }
 
 
@@ -283,11 +351,11 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
 * @returns {float} t : Parameter t so that point of intersection is ray.P0 + t*ray.V
 */
 float rayIntersectCylinder(Ray ray, vec3 c, float r, float h,
-                            int mIdx, mat4 MInv, mat3 N,
+    int mIdx, mat4 MInv, mat3 N,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
     intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
-/** TODO: PUT YOUR CODE HERE **/
+    /** TODO: PUT YOUR CODE HERE **/
     // TODO: The below three are dummy values
     intersect.p = vec3(0, 0, 0);
     intersect.n = vec3(0, 0, 0);
@@ -310,11 +378,11 @@ float rayIntersectCylinder(Ray ray, vec3 c, float r, float h,
 * @returns {float} t : Parameter t so that point of intersection is ray.P0 + t*ray.V
 */
 float rayIntersectCone(Ray ray, vec3 c, float r, float h,
-                            int mIdx, mat4 MInv, mat3 N,
+    int mIdx, mat4 MInv, mat3 N,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
     intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
-/** TODO: PUT YOUR CODE HERE **/
+    /** TODO: PUT YOUR CODE HERE **/
     // TODO: The below three are dummy values
     intersect.p = vec3(0, 0, 0);
     intersect.n = vec3(0, 0, 0);
@@ -372,8 +440,8 @@ Material getMaterial(int mIdx) {
 *                           the light we want to check
 */
 bool pointInShadow(Intersection intersect, Light l) {
-
-/** TODO: PUT YOUR CODE HERE **/
+    
+    /** TODO: PUT YOUR CODE HERE **/
     return false; // TODO: This is a dummy value
 }
 
@@ -386,8 +454,8 @@ vec3 getPhongColor(Intersection intersect, Material m) {
     // normal of the intersection.  But this should eventually
     // be replaced with code to do Phong illumination below
     color = 0.5*(intersect.n + 1.0);
-
-/** TODO: PUT YOUR CODE HERE **/
+    
+    /** TODO: PUT YOUR CODE HERE **/
     return color;
 }
 
@@ -397,13 +465,13 @@ vec3 getPhongColor(Intersection intersect, Material m) {
 */
 varying vec2 v_position;
 Ray getRay() {
-
+    
     Ray ray;
     ray.p0 = eye;
-
+    
     vec3 towards;
     towards = normalize(cross(up, right));
-
+    
     if (orthographic == 1) {
         ray.p0 = eye + 10.0 * v_position.x * right + 10.0 * v_position.y * up;
         ray.v = towards;
@@ -428,7 +496,7 @@ void showLightBeacons(Ray rayInitial, float tInitial) {
             if (i < numLights) {
                 Light light = lights[i];
                 float tlight = rayIntersectSphere(rayInitial, light.pos, beaconRadius,
-                                                  0, identity4, identity3, intersect);
+                0, identity4, identity3, intersect);
                 if (tlight < tInitial) {
                     gl_FragColor = vec4(light.color, 1.0);
                 }
@@ -471,14 +539,14 @@ void main() {
             // If doing extra task on transmission, only reflect if the
             // transmission coefficient kt is zero in all components
             // Otherwise, do transmission with snell's law
-
-/** TODO: PUT YOUR CODE HERE **/
+            
+            /** TODO: PUT YOUR CODE HERE **/
         }
-        else {
+        else{
             // Ray doesn't intersect anything, so no use continuing
             break;
         }
     }
-    gl_FragColor = vec4(color, 1.0);
-    showLightBeacons(rayInitial, tInitial);
+    gl_FragColor=vec4(color,1.);
+    showLightBeacons(rayInitial,tInitial);
 }
