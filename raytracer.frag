@@ -129,6 +129,8 @@ float rayIntersectTriangle(Ray ray, vec3 a, vec3 b, vec3 c,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
     
+    // left multiply the inverse with ray.p0 for transformations
+
     float t = INF;
     
     vec3 ab = b - a;
@@ -254,7 +256,7 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
     vec3 c, int mIdx, mat4 MInv, mat3 N,
                         out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
-    //   intersect.sCoeff = 1.0;
+    intersect.sCoeff = 1.0;
     
     float t;
 
@@ -268,7 +270,7 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
     vec3 norm1 = vec3(0.0, 0.0, -1.0);
     vec3 norm2 = vec3(0.0, 0.0, 1.0);
     vec3 norm3 = vec3(0.0, -1.0, 0.0);
-    vec3 norm4 = vec3(0.0, 1.0, 0.0);
+    vec3 norm4 = vec3(0.0, 0.1, 0.0);
     vec3 norm5 = vec3(-1.0, 0.0, 0.0);
     vec3 norm6 = vec3(1.0, 0.0, 0.0); 
 
@@ -286,6 +288,7 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
     float t5 = rayIntersectPlane(ray, norm5, side5p, mIdx, intersect5);
     float t6 = rayIntersectPlane(ray, norm6, side6p, mIdx, intersect6);
 
+    // This logic for finding the max and min times came from a stack overflow comment
     float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
     float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
