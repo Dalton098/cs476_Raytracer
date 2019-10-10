@@ -2,7 +2,7 @@ precision mediump float;
 
 #define INF 1.e+12
 #define EPS 1.e-3// Reflect/shadow/transmission ray offset
-#define MAX_RECURSION 3// Maximum depth for rays
+#define MAX_RECURSION 1// Maximum depth for rays
 #define MAX_LIGHTS 10
 #define MAX_MATERIALS 10
 #define M_PI 3.1415926535897932384626433832795
@@ -257,8 +257,13 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
                         out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
     intersect.sCoeff = 1.0;
-    
-    float t;
+
+    float xmin = c.x - W/2.0;
+    float xmax = c.x + W/2.0;
+    float ymin = c.y - H/2.0;
+    float ymax = c.y + H/2.0;
+    float zmin = c.x - L/2.0;
+    float zmax = c.x + L/2.0;
 
     vec3 side1p = vec3(c.x - W/2.0, c.y, c.z);
     vec3 side2p = vec3(c.x + W/2.0, c.y, c.z);
@@ -267,12 +272,12 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
     vec3 side5p = vec3(c.x, c.y, c.z - L/2.0);
     vec3 side6p = vec3(c.x, c.y, c.z + L/2.0);
 
-    vec3 norm1 = vec3(0.0, 0.0, -1.0);
-    vec3 norm2 = vec3(0.0, 0.0, 1.0);
+    vec3 norm1 = vec3(-1.0, 0.0, 0.0);
+    vec3 norm2 = vec3(1.0, 0.0, 0.0);
     vec3 norm3 = vec3(0.0, -1.0, 0.0);
-    vec3 norm4 = vec3(0.0, 0.1, 0.0);
-    vec3 norm5 = vec3(-1.0, 0.0, 0.0);
-    vec3 norm6 = vec3(1.0, 0.0, 0.0); 
+    vec3 norm4 = vec3(0.0, 1.0, 0.0);
+    vec3 norm5 = vec3(0.0, 0.0, -1.0);
+    vec3 norm6 = vec3(0.0, 0.0, 1.0); 
 
     Intersection intersect1;
     Intersection intersect2;
@@ -281,6 +286,7 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
     Intersection intersect5;
     Intersection intersect6;
 
+    float t = INF;
     float t1 = rayIntersectPlane(ray, norm1, side1p, mIdx, intersect1);
     float t2 = rayIntersectPlane(ray, norm2, side2p, mIdx, intersect2);
     float t3 = rayIntersectPlane(ray, norm3, side3p, mIdx, intersect3);
@@ -288,53 +294,55 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
     float t5 = rayIntersectPlane(ray, norm5, side5p, mIdx, intersect5);
     float t6 = rayIntersectPlane(ray, norm6, side6p, mIdx, intersect6);
 
-    // This logic for finding the max and min times came from a stack overflow comment
-    float tmin = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-    float tmax = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-
-    if (tmax < 0.0) {
-        return INF;
+    if(t1 < t && t1 > 0.0) {
+        if (intersect1.p.y > ymin && intersect1.p.y < ymax && intersect1.p.z > zmin && intersect1.p.z < zmax) {
+            intersect.p = intersect1.p;
+            intersect.n = intersect1.n;
+            t = t1;
+        }
     }
 
-    if (tmin > tmax) { 
-        return INF;
-    }
-    
-    if (tmin == t1) {
-        intersect.p = intersect1.p;
-        intersect.n = intersect1.n;
-        return t1;
+    if(t2 < t && t2 > 0.0) {
+        if (intersect2.p.y > ymin && intersect2.p.y < ymax && intersect2.p.z > zmin && intersect2.p.z < zmax) {
+            intersect.p = intersect2.p;
+            intersect.n = intersect2.n;
+            t = t2;
+        }
     }
 
-    if (tmin == t2) {
-        intersect.p = intersect2.p;
-        intersect.n = intersect2.n;
-        return t2;
+    if(t3 < t && t3 > 0.0) {
+        if (intersect3.p.x > xmin && intersect3.p.x < xmax && intersect3.p.z > zmin && intersect3.p.z < zmax) {
+            intersect.p = intersect3.p;
+            intersect.n = intersect3.n;
+            t = t3;
+        }
     }
 
-    if (tmin == t3) {
-        intersect.p = intersect3.p;
-        intersect.n = intersect3.n;
-        return t3;
+    if(t4 < t && t4 > 0.0) {
+        if (intersect4.p.x > xmin && intersect4.p.x < xmax && intersect4.p.z > zmin && intersect4.p.z < zmax) {
+            intersect.p = intersect4.p;
+            intersect.n = intersect4.n;
+            t = t4;
+        }
     }
 
-    if (tmin == t4) {
-        intersect.p = intersect4.p;
-        intersect.n = intersect4.n;
-        return t4;
+    if(t5 < t && t5 > 0.0) {
+        if (intersect5.p.x > xmin && intersect5.p.x < xmax && intersect5.p.y > ymin && intersect5.p.y < ymax) {
+            intersect.p = intersect5.p;
+            intersect.n = intersect5.n;
+            t = t5;
+        }
     }
 
-    if (tmin == t5) {
-        intersect.p = intersect5.p;
-        intersect.n = intersect5.n;
-        return t5;
+    if(t6 < t && t6 > 0.0) {
+        if (intersect6.p.x > xmin && intersect6.p.x < xmax && intersect6.p.y > ymin && intersect6.p.y < ymax) {
+            intersect.p = intersect6.p;
+            intersect.n = intersect6.n;
+            t = t6;
+        }
     }
 
-    if (tmin == t6) {
-        intersect.p = intersect6.p;
-        intersect.n = intersect6.n;
-        return t6;
-    }
+    return t;
 
 }
 
