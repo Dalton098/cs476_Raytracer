@@ -129,7 +129,20 @@ float rayIntersectTriangle(Ray ray, vec3 a, vec3 b, vec3 c,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
     
-    // left multiply the inverse with ray.p0 for transformations
+    vec3 p0Prime;
+    vec3 vPrime;
+    vec3 origP0 = ray.p0;
+    vec3 origV = ray.v;
+    vec4 temp;
+
+    temp = MInv * vec4(ray.p0, 1.0);
+    p0Prime = vec3(temp[0], temp[1], temp[2]);
+
+    temp = MInv * vec4(ray.v, 0.0);
+    vPrime = vec3(temp[0], temp[1], temp[2]);
+
+    ray.p0 = p0Prime;
+    ray.v = vPrime;
 
     float t = INF;
     
@@ -165,8 +178,8 @@ float rayIntersectTriangle(Ray ray, vec3 a, vec3 b, vec3 c,
         return INF;
     }
     
-    vec3 p = ray.p0 + t*ray.v;
-    vec3 normal = normalize(cross(ab,ac));
+    vec3 p = origP0 + t*origV;
+    vec3 normal = normalize(N * cross(ab,ac));
     
     intersect.p = p;
     intersect.n = normal;
@@ -195,6 +208,21 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
     
+    vec3 p0Prime;
+    vec3 vPrime;
+    vec3 origP0 = ray.p0;
+    vec3 origV = ray.v;
+    vec4 temp;
+
+    temp = MInv * vec4(ray.p0, 1.0);
+    p0Prime = vec3(temp[0], temp[1], temp[2]);
+
+    temp = MInv * vec4(ray.v, 0.0);
+    vPrime = vec3(temp[0], temp[1], temp[2]);
+
+    ray.p0 = p0Prime;
+    ray.v = vPrime;
+
     vec3 p0c = ray.p0 - c;
     
     float eqnA = dot(ray.v, ray.v);
@@ -210,8 +238,8 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
         float firstT = (-eqnB - sqrt(discrim)) / (2.0 * eqnA);
         
         if (firstT > 0.0) {
-            intersect.p = ray.p0 + firstT*ray.v;
-            intersect.n = normalize(intersect.p - c);
+            intersect.p = origP0 + firstT*origV;
+            intersect.n = normalize(N * (p0Prime + firstT*vPrime - c));
             intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
             return firstT;
         }
@@ -220,8 +248,8 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
             float secondT = (-eqnB + sqrt(discrim)) / (2.0 * eqnA);
             
             if (secondT > 0.0) {
-                intersect.p = ray.p0 + secondT*ray.v;
-                intersect.n = normalize(intersect.p - c);
+                intersect.p = origP0 + secondT*origV;
+                intersect.n = normalize(N * (p0Prime + secondT*vPrime - c));
                 intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
                 return secondT;
             }
@@ -257,6 +285,21 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
                         out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
     intersect.sCoeff = 1.0;
+
+    vec3 p0Prime;
+    vec3 vPrime;
+    vec3 origP0 = ray.p0;
+    vec3 origV = ray.v;
+    vec4 temp;
+
+    temp = MInv * vec4(ray.p0, 1.0);
+    p0Prime = vec3(temp[0], temp[1], temp[2]);
+
+    temp = MInv * vec4(ray.v, 0.0);
+    vPrime = vec3(temp[0], temp[1], temp[2]);
+
+    ray.p0 = p0Prime;
+    ray.v = vPrime;
 
     float xmin = c.x - W/2.0;
     float xmax = c.x + W/2.0;
@@ -296,48 +339,48 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
 
     if(t1 < t && t1 > 0.0) {
         if (intersect1.p.y > ymin && intersect1.p.y < ymax && intersect1.p.z > zmin && intersect1.p.z < zmax) {
-            intersect.p = intersect1.p;
-            intersect.n = intersect1.n;
+            intersect.p = origP0 + t1*origV;
+            intersect.n = normalize(N * intersect1.n);
             t = t1;
         }
     }
 
     if(t2 < t && t2 > 0.0) {
         if (intersect2.p.y > ymin && intersect2.p.y < ymax && intersect2.p.z > zmin && intersect2.p.z < zmax) {
-            intersect.p = intersect2.p;
-            intersect.n = intersect2.n;
+            intersect.p = origP0 + t2*origV;
+            intersect.n = normalize(N * intersect2.n);
             t = t2;
         }
     }
 
     if(t3 < t && t3 > 0.0) {
         if (intersect3.p.x > xmin && intersect3.p.x < xmax && intersect3.p.z > zmin && intersect3.p.z < zmax) {
-            intersect.p = intersect3.p;
-            intersect.n = intersect3.n;
+            intersect.p = origP0 + t3*origV;
+            intersect.n = normalize(N * intersect3.n);
             t = t3;
         }
     }
 
     if(t4 < t && t4 > 0.0) {
         if (intersect4.p.x > xmin && intersect4.p.x < xmax && intersect4.p.z > zmin && intersect4.p.z < zmax) {
-            intersect.p = intersect4.p;
-            intersect.n = intersect4.n;
+            intersect.p = origP0 + t4*origV;
+            intersect.n = normalize(N * intersect4.n);
             t = t4;
         }
     }
 
     if(t5 < t && t5 > 0.0) {
         if (intersect5.p.x > xmin && intersect5.p.x < xmax && intersect5.p.y > ymin && intersect5.p.y < ymax) {
-            intersect.p = intersect5.p;
-            intersect.n = intersect5.n;
+            intersect.p = origP0 + t5*origV;
+            intersect.n = normalize(N * intersect5.n);
             t = t5;
         }
     }
 
     if(t6 < t && t6 > 0.0) {
         if (intersect6.p.x > xmin && intersect6.p.x < xmax && intersect6.p.y > ymin && intersect6.p.y < ymax) {
-            intersect.p = intersect6.p;
-            intersect.n = intersect6.n;
+            intersect.p = origP0 + t6*origV;
+            intersect.n = normalize(N * intersect6.n);
             t = t6;
         }
     }
