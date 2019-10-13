@@ -507,7 +507,20 @@ vec3 getPhongColor(Intersection intersect, Material m) {
     // To help with debugging, color the fragment based on the
     // normal of the intersection.  But this should eventually
     // be replaced with code to do Phong illumination below
-    color = 0.5*(intersect.n + 1.0);
+    
+    Light temp;
+
+    for(int i = 0; i < MAX_LIGHTS; i++) {
+        temp = lights[i];
+
+        if (i == numLights) {
+            break;
+        }
+
+    }
+
+
+    // color = 0.5*(intersect.n + 1.0);
     
     /** TODO: PUT YOUR CODE HERE **/
     return color;
