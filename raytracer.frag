@@ -504,25 +504,48 @@ bool pointInShadow(Intersection intersect, Light l) {
 */
 vec3 getPhongColor(Intersection intersect, Material m) {
     vec3 color = vec3(0.0, 0.0, 0.0);
-    // To help with debugging, color the fragment based on the
-    // normal of the intersection.  But this should eventually
-    // be replaced with code to do Phong illumination below
     
-    Light temp;
+    Light currLight;
 
     for(int i = 0; i < MAX_LIGHTS; i++) {
-        temp = lights[i];
 
         if (i == numLights) {
             break;
         }
 
+        currLight = lights[i];
+
+        vec3 tpos = intersect.p.xyz;
+
+        vec3 L = currLight.pos - tpos;
+        float LDistSqr = dot(L, L);
+        L = normalize(L);
+        vec3 NT = normalize(intersect.n);
+
+        float kdCoeff = dot(NT, L);
+        if (kdCoeff < 0.0) {
+            kdCoeff = 0.0;
+        }
+
+        vec3 cKd = m.kd;
+        // if(m.kd[0] == 2.0 && m.kd[1] == 2.0 && m.kd[2] == 2.0) {
+        //      cKd = currLight.color;
+        // }
+
+        vec3 dh = normalize(eye - tpos);
+        vec3 h = -reflect(L, NT);
+        float ksCoeff = dot(h, dh);
+        if (ksCoeff < 0.0) {
+            ksCoeff = 0.0;
+        }
+        ksCoeff = pow(ksCoeff, m.shininess);
+
+        vec3 lColor = currLight.color/(currLight.atten.x + currLight.atten.y*sqrt(LDistSqr) + currLight.atten.z*LDistSqr);
+
+        color += (lColor*intersect.sCoeff*(kdCoeff * cKd + ksCoeff*m.ks));
+
     }
 
-
-    // color = 0.5*(intersect.n + 1.0);
-    
-    /** TODO: PUT YOUR CODE HERE **/
     return color;
 }
 
