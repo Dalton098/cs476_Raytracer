@@ -495,16 +495,28 @@ Material getMaterial(int mIdx) {
 */
 bool pointInShadow(Intersection intersect, Light l) {
     
-    /** TODO: PUT YOUR CODE HERE **/
-    return false; // TODO: This is a dummy value
+    Ray ray;
+    ray.p0 = intersect.p;
+    ray.v = l.pos - intersect.p;
+    ray.p0 += ray.v*EPS;
+
+    Intersection shadowIntersect;
+
+    float t = rayIntersectScene(ray, shadowIntersect);
+
+    if (t > 0.0 && t < 1.0) {
+        return true;
+    }
+
+    return false; 
 }
 
 /**
 * Get the phong illumination color
 */
 vec3 getPhongColor(Intersection intersect, Material m) {
+
     vec3 color = vec3(0.0, 0.0, 0.0);
-    
     Light currLight;
 
     for(int i = 0; i < MAX_LIGHTS; i++) {
@@ -528,9 +540,6 @@ vec3 getPhongColor(Intersection intersect, Material m) {
         }
 
         vec3 cKd = m.kd;
-        // if(m.kd[0] == 2.0 && m.kd[1] == 2.0 && m.kd[2] == 2.0) {
-        //      cKd = currLight.color;
-        // }
 
         vec3 dh = normalize(eye - tpos);
         vec3 h = -reflect(L, NT);
@@ -540,9 +549,16 @@ vec3 getPhongColor(Intersection intersect, Material m) {
         }
         ksCoeff = pow(ksCoeff, m.shininess);
 
+        float shadowCoeff;
+        if (pointInShadow(intersect, currLight)) {
+            shadowCoeff = 0.0;
+        } else {
+            shadowCoeff = 1.0;
+        }
+
         vec3 lColor = currLight.color/(currLight.atten.x + currLight.atten.y*sqrt(LDistSqr) + currLight.atten.z*LDistSqr);
 
-        color += (lColor*intersect.sCoeff*(kdCoeff * cKd + ksCoeff*m.ks));
+        color += (lColor*shadowCoeff*(kdCoeff * cKd + ksCoeff*m.ks));
 
     }
 
