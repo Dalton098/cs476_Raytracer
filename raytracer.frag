@@ -257,7 +257,7 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
         }
     }
     
-    // Returns INF if none of the other cases were triggered
+    // Returns INF if discrim = 0.0
     return INF;
 }
 
