@@ -640,9 +640,7 @@ void main() {
                 insideObj = false;
             }
             color += weight*getPhongColor(intersect, m);
-            
-            // TODO: Reflect ray, multiply weight by specular of this object,
-            // and recursively continue
+
             vec3 reflectedDir = reflect(ray.v, intersect.n);
 
             ray.p0 = intersect.p + EPS*reflectedDir;
