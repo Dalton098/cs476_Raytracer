@@ -2,7 +2,7 @@ precision mediump float;
 
 #define INF 1.e+12
 #define EPS 1.e-3// Reflect/shadow/transmission ray offset
-#define MAX_RECURSION 1// Maximum depth for rays
+#define MAX_RECURSION 3// Maximum depth for rays
 #define MAX_LIGHTS 10
 #define MAX_MATERIALS 10
 #define M_PI 3.1415926535897932384626433832795
@@ -640,8 +640,16 @@ void main() {
                 insideObj = false;
             }
             color += weight*getPhongColor(intersect, m);
+            
             // TODO: Reflect ray, multiply weight by specular of this object,
             // and recursively continue
+            vec3 reflectedDir = reflect(ray.v, intersect.n);
+
+            ray.p0 = intersect.p + EPS*reflectedDir;
+            ray.v = reflectedDir;
+
+            weight *= m.ks;
+
             // If doing extra task on transmission, only reflect if the
             // transmission coefficient kt is zero in all components
             // Otherwise, do transmission with snell's law
