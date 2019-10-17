@@ -640,6 +640,7 @@ void main() {
             }
             color += weight*getPhongColor(intersect, m);
 
+            // Reflections
             vec3 reflectedDir = reflect(ray.v, intersect.n);
 
             ray.p0 = intersect.p + EPS*reflectedDir;
