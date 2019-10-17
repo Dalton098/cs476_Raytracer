@@ -527,7 +527,7 @@ vec3 getPhongColor(Intersection intersect, Material m) {
 
         currLight = lights[i];
 
-        vec3 tpos = intersect.p.xyz;
+        vec3 tpos = intersect.p;
 
         vec3 L = currLight.pos - tpos;
         float LDistSqr = dot(L, L);
@@ -549,6 +549,7 @@ vec3 getPhongColor(Intersection intersect, Material m) {
         }
         ksCoeff = pow(ksCoeff, m.shininess);
 
+        // Shadows
         float shadowCoeff;
         if (pointInShadow(intersect, currLight)) {
             shadowCoeff = 0.0;
@@ -556,7 +557,19 @@ vec3 getPhongColor(Intersection intersect, Material m) {
             shadowCoeff = 1.0;
         }
 
+        // Spot Lights
+        vec3 normTowards = normalize(currLight.towards);
+        float spotAngle = dot(-L, normTowards);
+        float spotCoeff;
+
+        if(spotAngle < cos(currLight.angle)) {
+            spotCoeff = 0.0;
+        } else {
+            spotCoeff = 1.0;
+        }
+
         vec3 lColor = currLight.color/(currLight.atten.x + currLight.atten.y*sqrt(LDistSqr) + currLight.atten.z*LDistSqr);
+        lColor *= spotCoeff;
 
         color += (lColor*shadowCoeff*(kdCoeff * cKd + ksCoeff*m.ks));
 
@@ -641,6 +654,7 @@ void main() {
             }
             color += weight*getPhongColor(intersect, m);
 
+            // Reflections
             vec3 reflectedDir = reflect(ray.v, intersect.n);
 
             ray.p0 = intersect.p + EPS*reflectedDir;
