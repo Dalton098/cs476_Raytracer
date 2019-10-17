@@ -253,7 +253,6 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
                 intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
                 return secondT;
             }
-            
         }
     }
     
