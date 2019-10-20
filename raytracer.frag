@@ -207,6 +207,7 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
     int mIdx, mat4 MInv, mat3 N,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
+    intersect.sCoeff;
     
     vec3 p0Prime;
     vec3 vPrime;
@@ -240,7 +241,6 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
         if (firstT > 0.0) {
             intersect.p = origP0 + firstT*origV;
             intersect.n = normalize(N * (p0Prime + firstT*vPrime - c));
-            intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
             return firstT;
         }
         
@@ -250,7 +250,6 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
             if (secondT > 0.0) {
                 intersect.p = origP0 + secondT*origV;
                 intersect.n = normalize(N * (p0Prime + secondT*vPrime - c));
-                intersect.sCoeff = 1.0; // TODO: Change this for special material extra task
                 return secondT;
             }
         }
@@ -307,12 +306,12 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
     float zmin = c.x - L/2.0;
     float zmax = c.x + L/2.0;
 
-    vec3 side1p = vec3(c.x - W/2.0, c.y, c.z);
-    vec3 side2p = vec3(c.x + W/2.0, c.y, c.z);
-    vec3 side3p = vec3(c.x, c.y - H/2.0, c.z);
-    vec3 side4p = vec3(c.x, c.y + H/2.0, c.z);
-    vec3 side5p = vec3(c.x, c.y, c.z - L/2.0);
-    vec3 side6p = vec3(c.x, c.y, c.z + L/2.0);
+    vec3 side1p = vec3(xmin, c.y, c.z);
+    vec3 side2p = vec3(xmax, c.y, c.z);
+    vec3 side3p = vec3(c.x, ymin, c.z);
+    vec3 side4p = vec3(c.x, ymax, c.z);
+    vec3 side5p = vec3(c.x, c.y, zmin);
+    vec3 side6p = vec3(c.x, c.y, zmax);
 
     vec3 norm1 = vec3(-1.0, 0.0, 0.0);
     vec3 norm2 = vec3(1.0, 0.0, 0.0);
@@ -340,6 +339,7 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
         if (intersect1.p.y > ymin && intersect1.p.y < ymax && intersect1.p.z > zmin && intersect1.p.z < zmax) {
             intersect.p = origP0 + t1*origV;
             intersect.n = normalize(N * intersect1.n);
+            intersect.sCoeff = cos(28.0 * intersect1.p.y) * cos(28.0 * intersect1.p.z);
             t = t1;
         }
     }
@@ -348,6 +348,7 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
         if (intersect2.p.y > ymin && intersect2.p.y < ymax && intersect2.p.z > zmin && intersect2.p.z < zmax) {
             intersect.p = origP0 + t2*origV;
             intersect.n = normalize(N * intersect2.n);
+            intersect.sCoeff = cos(28.0 * intersect2.p.y) * cos(28.0 * intersect2.p.z);
             t = t2;
         }
     }
@@ -356,6 +357,7 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
         if (intersect3.p.x > xmin && intersect3.p.x < xmax && intersect3.p.z > zmin && intersect3.p.z < zmax) {
             intersect.p = origP0 + t3*origV;
             intersect.n = normalize(N * intersect3.n);
+            intersect.sCoeff = cos(28.0 * intersect3.p.x) * cos(28.0 * intersect3.p.z);
             t = t3;
         }
     }
@@ -364,6 +366,7 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
         if (intersect4.p.x > xmin && intersect4.p.x < xmax && intersect4.p.z > zmin && intersect4.p.z < zmax) {
             intersect.p = origP0 + t4*origV;
             intersect.n = normalize(N * intersect4.n);
+            intersect.sCoeff = cos(28.0 * intersect4.p.x) * cos(28.0 * intersect4.p.z);
             t = t4;
         }
     }
@@ -372,6 +375,7 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
         if (intersect5.p.x > xmin && intersect5.p.x < xmax && intersect5.p.y > ymin && intersect5.p.y < ymax) {
             intersect.p = origP0 + t5*origV;
             intersect.n = normalize(N * intersect5.n);
+            intersect.sCoeff = cos(28.0 * intersect5.p.x) * cos(28.0 * intersect5.p.y);
             t = t5;
         }
     }
@@ -380,8 +384,18 @@ float rayIntersectBox(Ray ray, float W, float H, float L,
         if (intersect6.p.x > xmin && intersect6.p.x < xmax && intersect6.p.y > ymin && intersect6.p.y < ymax) {
             intersect.p = origP0 + t6*origV;
             intersect.n = normalize(N * intersect6.n);
+            intersect.sCoeff = cos(28.0 * intersect6.p.x) * cos(28.0 * intersect6.p.y);
             t = t6;
-        }
+        }   
+    }
+
+    // Artistic Looking bug
+    // intersect.sCoeff = cos(28.0 * intersect1.p.y) * cos(28.0 * intersect1.p.z);
+
+    if (intersect.sCoeff < 0.0) {
+        intersect.sCoeff = 0.0;
+    } else {
+        intersect.sCoeff = 1.0;
     }
 
     return t;
@@ -566,6 +580,12 @@ vec3 getPhongColor(Intersection intersect, Material m) {
         } else {
             spotCoeff = 1.0;
         }
+
+        // Special
+        if (m.special == 1) {
+            kdCoeff *= intersect.sCoeff;
+        }
+
 
         vec3 lColor = currLight.color/(currLight.atten.x + currLight.atten.y*sqrt(LDistSqr) + currLight.atten.z*LDistSqr);
         lColor *= spotCoeff;
