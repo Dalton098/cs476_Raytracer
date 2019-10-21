@@ -207,7 +207,7 @@ float rayIntersectSphere(Ray ray, vec3 c, float r,
     int mIdx, mat4 MInv, mat3 N,
                             out Intersection intersect) {
     intersect.mIdx = mIdx; // Store away the material index
-    intersect.sCoeff;
+    intersect.sCoeff = 1.0;
     
     vec3 p0Prime;
     vec3 vPrime;
@@ -562,13 +562,16 @@ vec3 getPhongColor(Intersection intersect, Material m) {
         }
         ksCoeff = pow(ksCoeff, m.shininess);
 
-        // Shadows
+        // Hard Shadows
         float shadowCoeff;
         if (pointInShadow(intersect, currLight)) {
             shadowCoeff = 0.0;
         } else {
             shadowCoeff = 1.0;
         }
+
+        // Soft Shadows should call a method to calculate shadowCoeff based off of multiple points and taking an avg of their shadowCoeffs
+        // ie: call pointInShadow multiple times based off currLight and the intersect. Vary the pos in the currLight
 
         // Spot Lights
         vec3 normTowards = normalize(currLight.towards);
