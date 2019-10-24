@@ -6,6 +6,7 @@ precision mediump float;
 #define MAX_LIGHTS 10
 #define MAX_MATERIALS 10
 #define M_PI 3.1415926535897932384626433832795
+#define NUM_VECTORS 20
 
 /*******************************************
                 DATA TYPES
@@ -556,20 +557,10 @@ float numPointInShadow(Intersection intersect, Light l) {
 *  @param {Light} l : The light we are looking at for the shadow
 */
 float softShadow(Intersection intersect, Light l) {
-    // Random numbers for adjusting the light pos
-    // Scaled down so the change in pos is not too drastic
-    float rand1 = 0.1 * random(vec2(l.pos.xy));
-    float rand2 = 0.1 * random(vec2(intersect.p.xy));
-    float rand3 = 0.1 * random(vec2(l.pos.y, l.pos.y));
-    float rand4 = 0.1 * random(vec2(intersect.p.x, l.pos.z));
-    float rand5 = 0.1 * random(vec2(l.pos.z, l.pos.x));
 
-    float randomVals[5];
-    randomVals[0] = rand1;
-    randomVals[1] = rand2;
-    randomVals[2] = rand3;
-    randomVals[3] = rand4;
-    randomVals[4] = rand5;
+    float rand1 = random(vec2(intersect.p.xy));
+    float rand2 = random(vec2(intersect.p.xz));
+    float rand3 = random(vec2(intersect.p.yz));
 
     vec3 origPos = l.pos;
     float shadowCoeff = 0.0;
@@ -578,18 +569,25 @@ float softShadow(Intersection intersect, Light l) {
     // original shadow
     numShadow += numPointInShadow(intersect, l);
 
-    for(int i = 0; i < 5; i++) {
+    vec3 randVec;
+    for(int i = 0; i < NUM_VECTORS; i++) {
+
+        randVec = beaconRadius * normalize(vec3(rand1, rand2, rand3));
+
         l.pos = origPos;
 
-        l.pos = origPos - randomVals[i];
+        // l.pos = origPos - randomVecs[i];
+        // numShadow += numPointInShadow(intersect, l);
+
+        l.pos = origPos + randVec;
         numShadow += numPointInShadow(intersect, l);
 
-        l.pos = origPos + randomVals[i];
-        numShadow += numPointInShadow(intersect, l);
-
+        rand1 = random(vec2(rand1, rand2));
+        rand2 = random(vec2(rand2, rand3));
+        rand3 = random(vec2(rand1, rand3));
     }
 
-    shadowCoeff = numShadow / 11.0;
+    shadowCoeff = numShadow / (float(NUM_VECTORS) + 1.0);
 
     return shadowCoeff;
 
@@ -660,7 +658,6 @@ vec3 getPhongColor(Intersection intersect, Material m) {
         if (m.special == 1) {
             kdCoeff *= intersect.sCoeff;
         }
-
 
         vec3 lColor = currLight.color/(currLight.atten.x + currLight.atten.y*sqrt(LDistSqr) + currLight.atten.z*LDistSqr);
         lColor *= spotCoeff;
