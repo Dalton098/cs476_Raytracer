@@ -66,6 +66,11 @@ uniform vec3 up;
 uniform float fovx;
 uniform float fovy;
 
+// NOTE: This random function comes from The Book of Shaders wesbite that was linked on the assignment website
+float random (vec2 st) {
+    return fract(sin(dot(st.xy,vec2(12.9898,78.233)))*43758.5453123);
+}
+
 
 /*******************************************
            RAY CASTING FUNCTIONS
@@ -524,6 +529,73 @@ bool pointInShadow(Intersection intersect, Light l) {
     return false; 
 }
 
+// NOTE: This is the same as the function above just altered to return 1 and 0 for ease of use in soft shadows
+float numPointInShadow(Intersection intersect, Light l) {
+    
+    Ray ray;
+    ray.p0 = intersect.p;
+    ray.v = l.pos - intersect.p;
+    ray.p0 += ray.v*EPS;
+
+    Intersection shadowIntersect;
+
+    float t = rayIntersectScene(ray, shadowIntersect);
+
+    if (t > 0.0 && t < 1.0) {
+        return 0.0;
+    }
+
+    return 1.0; 
+}
+
+
+/**
+*  Determines the shadowCoeff to use to get the soft shadows affect
+*
+*  @param {Intersection} intersect : Intersection point we are looking at
+*  @param {Light} l : The light we are looking at for the shadow
+*/
+float softShadow(Intersection intersect, Light l) {
+    // Random numbers for adjusting the light pos
+    // Scaled down so the change in pos is not too drastic
+    float rand1 = 0.1 * random(vec2(l.pos.xy));
+    float rand2 = 0.1 * random(vec2(intersect.p.xy));
+    float rand3 = 0.1 * random(vec2(l.pos.y, l.pos.y));
+    float rand4 = 0.1 * random(vec2(intersect.p.x, l.pos.z));
+    float rand5 = 0.1 * random(vec2(l.pos.z, l.pos.x));
+
+    float randomVals[5];
+    randomVals[0] = rand1;
+    randomVals[1] = rand2;
+    randomVals[2] = rand3;
+    randomVals[3] = rand4;
+    randomVals[4] = rand5;
+
+    vec3 origPos = l.pos;
+    float shadowCoeff = 0.0;
+    float numShadow = 0.0;
+
+    // original shadow
+    numShadow += numPointInShadow(intersect, l);
+
+    for(int i = 0; i < 5; i++) {
+        l.pos = origPos;
+
+        l.pos = origPos - randomVals[i];
+        numShadow += numPointInShadow(intersect, l);
+
+        l.pos = origPos + randomVals[i];
+        numShadow += numPointInShadow(intersect, l);
+
+    }
+
+    shadowCoeff = numShadow / 11.0;
+
+    return shadowCoeff;
+
+}
+
+
 /**
 * Get the phong illumination color
 */
@@ -564,14 +636,14 @@ vec3 getPhongColor(Intersection intersect, Material m) {
 
         // Hard Shadows
         float shadowCoeff;
-        if (pointInShadow(intersect, currLight)) {
-            shadowCoeff = 0.0;
-        } else {
-            shadowCoeff = 1.0;
-        }
+        // if (pointInShadow(intersect, currLight)) {
+        //     shadowCoeff = 0.0;
+        // } else {
+        //     shadowCoeff = 1.0;
+        // }
 
-        // Soft Shadows should call a method to calculate shadowCoeff based off of multiple points and taking an avg of their shadowCoeffs
-        // ie: call pointInShadow multiple times based off currLight and the intersect. Vary the pos in the currLight
+        // Soft Shadows
+        shadowCoeff = softShadow(intersect, currLight);
 
         // Spot Lights
         vec3 normTowards = normalize(currLight.towards);
@@ -594,6 +666,10 @@ vec3 getPhongColor(Intersection intersect, Material m) {
         lColor *= spotCoeff;
 
         color += (lColor*shadowCoeff*(kdCoeff * cKd + ksCoeff*m.ks));
+        // vec3 cKs;
+        // cKd *= shadowCoeff;
+        // cKs = m.ks * shadowCoeff;
+        // color += (lColor*(kdCoeff * cKd + ksCoeff*cKs));
 
     }
 
