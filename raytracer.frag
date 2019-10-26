@@ -6,7 +6,7 @@ precision mediump float;
 #define MAX_LIGHTS 10
 #define MAX_MATERIALS 10
 #define M_PI 3.1415926535897932384626433832795
-#define NUM_VECTORS 20
+#define NUM_VECTORS 10
 
 /*******************************************
                 DATA TYPES
@@ -574,11 +574,6 @@ float softShadow(Intersection intersect, Light l) {
 
         randVec = beaconRadius * normalize(vec3(rand1, rand2, rand3));
 
-        l.pos = origPos;
-
-        // l.pos = origPos - randomVecs[i];
-        // numShadow += numPointInShadow(intersect, l);
-
         l.pos = origPos + randVec;
         numShadow += numPointInShadow(intersect, l);
 
@@ -663,10 +658,6 @@ vec3 getPhongColor(Intersection intersect, Material m) {
         lColor *= spotCoeff;
 
         color += (lColor*shadowCoeff*(kdCoeff * cKd + ksCoeff*m.ks));
-        // vec3 cKs;
-        // cKd *= shadowCoeff;
-        // cKs = m.ks * shadowCoeff;
-        // color += (lColor*(kdCoeff * cKd + ksCoeff*cKs));
 
     }
 
